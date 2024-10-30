@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 
@@ -25,6 +26,8 @@ public class FieldCentricTeleop extends LinearOpMode {
         DcMotor testMotor = hardwareMap.dcMotor.get("testMotor");
         Servo testServo = hardwareMap.servo.get("testServo");
 
+        NormalizedColorSensor colorSensor
+                = hardwareMap.get(NormalizedColorSensor.class, "color_sensor");
         TouchSensor touchSensor = hardwareMap.get(TouchSensor.class, "touchSensor");
         boolean touchSensorPressed = false;
 
