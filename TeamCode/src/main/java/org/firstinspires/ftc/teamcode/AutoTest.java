@@ -49,7 +49,7 @@ public class AutoTest extends LinearOpMode {
     public void runOpMode() {
 
         odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");
-        odo.setOffsets(37, 0); //these are tuned for 3110-0002-0001 Product Insight #1
+        odo.setOffsets(67, 40); //these are tuned for 3110-0002-0001 Product Insight #1
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
         odo.resetPosAndIMU();
@@ -75,34 +75,38 @@ public class AutoTest extends LinearOpMode {
         resetRuntime();
 
         gyroTurnToAngle(90);
-        driveToPos(new Pose2D(DistanceUnit.CM, 20, 20, AngleUnit.DEGREES, 0));
+        driveToPos(200, 200);
         sleep(10000);
     }
 
-    public void driveToPos(Pose2D targetPose) {
+    public void driveToPos(double targetX, double targetY) {
         odo.update();
-        Pose2D pos = odo.getPosition();
 
-        while (opModeIsActive() && (((targetPose.getX(DistanceUnit.CM) - pos.getX(DistanceUnit.CM)) > 5) || ((targetPose.getY(DistanceUnit.CM) - pos.getY(DistanceUnit.CM))) > 5)) {
+        while (opModeIsActive() && ((Math.abs(targetX - odo.getPosX()) > 5) || (Math.abs(targetY - odo.getPosY())) > 5)) {
             odo.update();
-            pos = odo.getPosition();
 
-            double x = 0.01*(targetPose.getX(DistanceUnit.CM) - pos.getX(DistanceUnit.CM));
-            double y = -0.01*(targetPose.getY(DistanceUnit.CM) - pos.getY(DistanceUnit.CM));
+            double x = 0.001*(targetX - odo.getPosX());
+            double y = -0.001*(targetY - odo.getPosY());
+
+            double botHeading = odo.getHeading();
+
+            double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
+            double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
 
             double denominator = Math.max(Math.abs(y) + Math.abs(x), 1);
-            double frontLeftPower = (x + y) / denominator;
-            double backLeftPower = (x - y) / denominator;
-            double frontRightPower = (x - y) / denominator;
-            double backRightPower = (x + y) / denominator;
+            double frontLeftPower = (rotX + rotY) / denominator;
+            double backLeftPower = (rotX - rotY) / denominator;
+            double frontRightPower = (rotX - rotY) / denominator;
+            double backRightPower = (rotX + rotY) / denominator;
 
             frontLeftMotor.setPower(frontLeftPower);
             backLeftMotor.setPower(backLeftPower);
             frontRightMotor.setPower(frontRightPower);
             backRightMotor.setPower(backRightPower);
 
-            String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", pos.getX(DistanceUnit.MM), pos.getY(DistanceUnit.MM), pos.getHeading(AngleUnit.DEGREES));
-            telemetry.addData("Position", data);
+            telemetry.addData("X: ", odo.getPosX());
+            telemetry.addData("Y: ", odo.getPosY());
+            telemetry.addData("Heading Odo: ", Math.toDegrees(odo.getHeading()));
             telemetry.update();
         }
 
@@ -119,6 +123,12 @@ public class AutoTest extends LinearOpMode {
         error = turnAngle;
 
         while (opModeIsActive() && ((error > 1) || (error < -1))) {
+            odo.update();
+            telemetry.addData("X: ", odo.getPosX());
+            telemetry.addData("Y: ", odo.getPosY());
+            telemetry.addData("Heading Odo: ", Math.toDegrees(odo.getHeading()));
+            telemetry.update();
+
             driveMotorsPower = error / 200;
 
             if ((driveMotorsPower < 0.2) && (driveMotorsPower > 0)) {
@@ -134,6 +144,7 @@ public class AutoTest extends LinearOpMode {
             backRightMotor.setPower(driveMotorsPower);
 
             currentHeadingAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+            error = turnAngle - currentHeadingAngle;
         }
         frontLeftMotor.setPower(0);
         backLeftMotor.setPower(0);

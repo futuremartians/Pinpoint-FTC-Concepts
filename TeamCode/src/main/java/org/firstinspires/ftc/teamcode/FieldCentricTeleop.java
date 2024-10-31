@@ -23,6 +23,12 @@ public class FieldCentricTeleop extends LinearOpMode {
         DcMotor frontRightMotor = hardwareMap.dcMotor.get("frontRightMotor");
         DcMotor backRightMotor = hardwareMap.dcMotor.get("backRightMotor");
 
+        GoBildaPinpointDriver odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");
+        odo.setOffsets(67, 40); //these are tuned for 3110-0002-0001 Product Insight #1
+        odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        odo.resetPosAndIMU();
+
         DcMotor testMotor = hardwareMap.dcMotor.get("testMotor");
         Servo testServo = hardwareMap.servo.get("testServo");
 
@@ -92,6 +98,13 @@ public class FieldCentricTeleop extends LinearOpMode {
             }
 
             testMotor.setPower(gamepad1.right_trigger);
+
+            odo.update();
+            telemetry.addData("X: ", odo.getPosX());
+            telemetry.addData("Y: ", odo.getPosY());
+            telemetry.addData("Heading Odo: ", Math.toDegrees(odo.getHeading()));
+            telemetry.update();
+            telemetry.update();
         }
     }
 }
