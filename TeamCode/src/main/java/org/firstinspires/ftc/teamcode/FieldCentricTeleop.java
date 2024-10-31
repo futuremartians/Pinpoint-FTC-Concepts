@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -8,6 +9,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -34,8 +36,10 @@ public class FieldCentricTeleop extends LinearOpMode {
 
         NormalizedColorSensor colorSensor
                 = hardwareMap.get(NormalizedColorSensor.class, "color_sensor");
-        TouchSensor touchSensor = hardwareMap.get(TouchSensor.class, "touchSensor");
-        boolean touchSensorPressed = false;
+        DigitalChannel touchSensor = hardwareMap.get(DigitalChannel.class, "touchSensor");
+        touchSensor.setMode(DigitalChannel.Mode.INPUT);
+        boolean touchSensorPreviouslyPressed = false;
+        boolean touchSensorCurrentlyPressed = false;
 
         // Reverse the right side motors. This may be wrong for your setup.
         // If your robot moves backwards when commanded to go forwards,
@@ -62,12 +66,18 @@ public class FieldCentricTeleop extends LinearOpMode {
             double x = gamepad1.left_stick_x;
             double rx = gamepad1.right_stick_x;
 
+            /******************  RESET GYRO / IMU ANGLE TO FIX TELEOP STARTS *******************/
+
             // This button choice was made so that it is hard to hit on accident,
             // it can be freely changed based on preference.
             // The equivalent button is start on Xbox-style controllers.
             if (gamepad1.options) {
                 imu.resetYaw();
             }
+            /******************  RESET GYRO / IMU ANGLE TO FIX TELEOP ENDS *******************/
+
+
+            /******************  TELEOP DRIVING CODE STARTS *******************/
 
             double botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
@@ -91,20 +101,77 @@ public class FieldCentricTeleop extends LinearOpMode {
             frontRightMotor.setPower(0.5 * frontRightPower);
             backRightMotor.setPower(0.5 * backRightPower);
 
+            /******************  TELEOP DRIVING CODE ENDS *******************/
+
+
+            /******************  TOUCH SENSOR BASED TEST SERVO OPERATION CODE STARTS *******************/
+
             if (touchSensor.isPressed()) {
                 testServo.setPosition(1);
             } else {
                 testServo.setPosition(0);
             }
 
-            testMotor.setPower(gamepad1.right_trigger);
+            // button is PRESSED if value returned is LOW or false.
+            if (touchSensor.getState()) {
+                touchSensorCurrentlyPressed = true;
+            } else {
+                touchSensorCurrentlyPressed = false;
+            }
 
+            // If the button state is different than what it was, then act
+            if (touchSensorCurrentlyPressed != touchSensorPreviouslyPressed) {
+                // If the button is (now) down, then toggle the SERVO position
+                if (touchSensorCurrentlyPressed) {
+                    if (testServo.getPosition() > 0.9) {
+                        testServo.setPosition(0);
+                    } else {
+                        testServo.setPosition(1);
+                    }
+                }
+            }
+            touchSensorPreviouslyPressed = touchSensorCurrentlyPressed;
+
+            /******************  TOUCH SENSOR BASED TEST SERVO OPERATION CODE ENDS *******************/
+
+
+            /******************  GAMEPAD BASED TEST MOTOR OPERATION CODE STARTS *******************/
+
+            if (gamepad1.right_trigger > 0) {
+                testMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                testMotor.setPower(gamepad1.right_trigger);
+            } else if (gamepad1.left_trigger > 0) {
+                testMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                testMotor.setPower(-gamepad1.left_trigger);
+            }
+
+            if (gamepad1.right_bumper) {
+                testMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                testMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                testMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                while (opModeIsActive() && (testMotor.getCurrentPosition() >= 1000)) {
+                    testMotor.setPower(0.5);
+                }
+            } else if (gamepad1.left_bumper) {
+                testMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                testMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                testMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                testMotor.setPower(0.5);
+                testMotor.setTargetPosition(-1000);
+            }
+
+            /******************  GAMEPAD BASED TEST MOTOR OPERATION CODE ENDS *******************/
+
+
+            /******************  LOGGING TO CHECK PINPOINT TRACKING STARTS *******************/
             odo.update();
             telemetry.addData("X: ", odo.getPosX());
             telemetry.addData("Y: ", odo.getPosY());
             telemetry.addData("Heading Odo: ", Math.toDegrees(odo.getHeading()));
             telemetry.update();
             telemetry.update();
+
+            /******************  LOGGING TO CHECK PINPOINT TRACKING ENDS *******************/
         }
     }
 }
