@@ -74,15 +74,18 @@ public class AutoTest extends LinearOpMode {
         waitForStart();
         resetRuntime();
 
+        driveToPos(400, 800);
+        gyroTurnToAngle(-135);
+        driveToPos(100, 500);
         gyroTurnToAngle(90);
-        driveToPos(200, 200);
-        sleep(10000);
+        driveToPos(300, 100);
     }
 
     public void driveToPos(double targetX, double targetY) {
         odo.update();
+        boolean telemAdded = false;
 
-        while (opModeIsActive() && ((Math.abs(targetX - odo.getPosX()) > 5) || (Math.abs(targetY - odo.getPosY())) > 5)) {
+        while (opModeIsActive() && ((Math.abs(targetX - odo.getPosX()) > 50) || (Math.abs(targetY - odo.getPosY())) > 50)) {
             odo.update();
 
             double x = 0.001*(targetX - odo.getPosX());
@@ -90,8 +93,17 @@ public class AutoTest extends LinearOpMode {
 
             double botHeading = odo.getHeading();
 
-            double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
-            double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
+            double rotY = y * Math.cos(-botHeading) - x * Math.sin(-botHeading);
+            double rotX = y * Math.sin(-botHeading) + x * Math.cos(-botHeading);
+
+            if (!telemAdded) {
+                telemetry.addData("x: ", x);
+                telemetry.addData("y: ", y);
+                telemetry.addData("rotX: ", rotX);
+                telemetry.addData("rotY: ", rotY);
+                telemetry.update();
+                telemAdded = true;
+            }
 
             double denominator = Math.max(Math.abs(y) + Math.abs(x), 1);
             double frontLeftPower = (rotX + rotY) / denominator;
@@ -104,10 +116,10 @@ public class AutoTest extends LinearOpMode {
             frontRightMotor.setPower(frontRightPower);
             backRightMotor.setPower(backRightPower);
 
-            telemetry.addData("X: ", odo.getPosX());
+            /*telemetry.addData("X: ", odo.getPosX());
             telemetry.addData("Y: ", odo.getPosY());
             telemetry.addData("Heading Odo: ", Math.toDegrees(odo.getHeading()));
-            telemetry.update();
+            telemetry.update();*/
         }
 
         frontLeftMotor.setPower(0);
