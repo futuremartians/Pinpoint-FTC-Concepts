@@ -39,6 +39,7 @@ import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.SwitchableLight;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
@@ -70,6 +71,7 @@ public class ColorSensorTest extends LinearOpMode {
 
   /** The colorSensor field will contain a reference to our color sensor hardware object */
   NormalizedColorSensor colorSensor;
+  Servo rgbIndicatorLight;
 
   /** The relativeLayout field is used to aid in providing interesting visual feedback
    * in this sample application; you probably *don't* need this when you use a color sensor on your
@@ -96,15 +98,6 @@ public class ColorSensorTest extends LinearOpMode {
     try {
       runSample(); // actually execute the sample
     } finally {
-      // On the way out, *guarantee* that the background is reasonable. It doesn't actually start off
-      // as pure white, but it's too much work to dig out what actually was used, and this is good
-      // enough to at least make the screen reasonable again.
-      // Set the panel back to the default color
-      relativeLayout.post(new Runnable() {
-        public void run() {
-          relativeLayout.setBackgroundColor(Color.WHITE);
-        }
-      });
       }
   }
 
@@ -139,6 +132,7 @@ public class ColorSensorTest extends LinearOpMode {
     // ColorSensor, because NormalizedColorSensor consistently gives values between 0 and 1, while
     // the values you get from ColorSensor are dependent on the specific sensor you're using.
     colorSensor = hardwareMap.get(NormalizedColorSensor.class, "color_sensor");
+    rgbIndicatorLight = hardwareMap.servo.get("rgbLight");
 
     // If possible, turn the light on in the beginning (it might already be on anyway,
     // we just make sure it is if we can).
@@ -225,11 +219,23 @@ public class ColorSensorTest extends LinearOpMode {
                     .addData("Yellow Abs Sample", ((colors.green > colors.blue) && (colors.green > colors.red)));
 
             telemetry.addLine()
-                    .addData("Red HSV Sample", (hsvValues[0] < 35));
+                    .addData("Red HSV Sample", (hsvValues[0] > 0) && (hsvValues[0] < 35));
             telemetry.addLine()
-                    .addData("Blue HSV Sample", (hsvValues[0] > 205));
+                    .addData("Blue HSV Sample", (hsvValues[0] > 205) && (hsvValues[0] < 240));
             telemetry.addLine()
                     .addData("Yellow HSV Sample", (hsvValues[0] > 70) && (hsvValues[0] < 91));
+
+            if ((hsvValues[0] > 0) && (hsvValues[0] < 35)) {
+              rgbIndicatorLight.setPosition(0.28); // 0.28 is for Red
+            } else if ((hsvValues[0] > 205) && (hsvValues[0] < 240)) {
+              rgbIndicatorLight.setPosition(0.62); // 0.62 is for Blue
+            } else if ((hsvValues[0] > 70) && (hsvValues[0] < 91)) {
+              rgbIndicatorLight.setPosition(0.37); // 0.37 is for Yellow
+            } else {
+              rgbIndicatorLight.setPosition(0); // 0 is for Black / Off
+            }
+          } else if (yButtonCurrentlyPressed) {
+            rgbIndicatorLight.setPosition(0); // 0 is for Black / Off
           }
 
           telemetry.update();

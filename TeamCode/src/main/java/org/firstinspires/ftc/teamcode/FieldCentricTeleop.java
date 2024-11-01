@@ -33,12 +33,12 @@ public class FieldCentricTeleop extends LinearOpMode {
 
         DcMotor testMotor = hardwareMap.dcMotor.get("testMotor");
         Servo testServo = hardwareMap.servo.get("testServo");
+        Servo rgbIndicatorLight = hardwareMap.servo.get("rgbLight");
         testServo.setPosition(1);
 
         NormalizedColorSensor colorSensor
                 = hardwareMap.get(NormalizedColorSensor.class, "color_sensor");
-        DigitalChannel touchSensor = hardwareMap.get(DigitalChannel.class, "touchSensor");
-        touchSensor.setMode(DigitalChannel.Mode.INPUT);
+        TouchSensor touchSensor = hardwareMap.touchSensor.get("touchSensor");
         boolean touchSensorPreviouslyPressed = false;
         boolean touchSensorCurrentlyPressed = false;
 
@@ -107,13 +107,13 @@ public class FieldCentricTeleop extends LinearOpMode {
 
             /******************  TOUCH SENSOR BASED TEST SERVO OPERATION CODE STARTS *******************/
 
-            telemetry.addData("Touch Sensor: ", touchSensor.getState());
+            telemetry.addData("Touch Sensor: ", touchSensor.isPressed());
 
-            // button is PRESSED if value returned is LOW or false.
-            if (touchSensor.getState()) {
-                touchSensorCurrentlyPressed = false;
-            } else {
+            // button is PRESSED if value returned is true.
+            if (touchSensor.isPressed()) {
                 touchSensorCurrentlyPressed = true;
+            } else {
+                touchSensorCurrentlyPressed = false;
             }
 
             // If the button state is different than what it was, then act
@@ -132,16 +132,32 @@ public class FieldCentricTeleop extends LinearOpMode {
             /******************  TOUCH SENSOR BASED TEST SERVO OPERATION CODE ENDS *******************/
 
 
+            /******************  GAMEPAD BASED RGB LIGHT CODE STARTS *******************/
+
+            if (gamepad1.left_trigger > 0) {
+                rgbIndicatorLight.setPosition(gamepad1.left_trigger);
+            }
+            else {
+                rgbIndicatorLight.setPosition(0);
+            }
+
+            /******************  GAMEPAD BASED RGB LIGHT CODE ENDS *******************/
+
+
             /******************  GAMEPAD BASED TEST MOTOR OPERATION CODE STARTS *******************/
 
 /* Enable this OR tbe next block only */
             if (gamepad1.right_trigger > 0.05) {
                 testMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 testMotor.setPower(gamepad1.right_trigger);
-            } else if (gamepad1.left_trigger > 0.05) {
+            }
+            /*
+            else if (gamepad1.left_trigger > 0.05) {
                 testMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 testMotor.setPower(-gamepad1.left_trigger);
-            } else {
+            }
+            */
+            else {
                 testMotor.setPower(0);
             }
 /**/

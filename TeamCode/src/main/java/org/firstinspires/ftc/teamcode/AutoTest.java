@@ -105,6 +105,14 @@ public class AutoTest extends LinearOpMode {
                 telemAdded = true;
             }
 
+            if (Math.abs(rotX) < 0.15) {
+                rotX = Math.signum(rotX) * 0.15;
+            }
+
+            if (Math.abs(rotY) < 0.15) {
+                rotY = Math.signum(rotY) * 0.15;
+            }
+
             double denominator = Math.max(Math.abs(y) + Math.abs(x), 1);
             double frontLeftPower = (rotX + rotY) / denominator;
             double backLeftPower = (rotX - rotY) / denominator;
