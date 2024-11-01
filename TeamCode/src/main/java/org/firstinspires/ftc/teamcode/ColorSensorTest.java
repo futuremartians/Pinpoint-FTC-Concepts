@@ -146,19 +146,21 @@ public class ColorSensorTest extends LinearOpMode {
       ((SwitchableLight)colorSensor).enableLight(true);
     }
 
+    // Provide information via telemetry
+    telemetry.addLine("Press the X button on gamepad 1 to toggle the light.\n");
+    telemetry.addLine("Press the Y button on gamepad 1 to detect color again.\n");
+    telemetry.addData("Gain", gain);
+    telemetry.update();
+
     // Wait for the start button to be pressed.
     waitForStart();
 
     // Loop until we are asked to stop
     while (opModeIsActive()) {
-      // Show the gain value via telemetry
-      telemetry.addData("Gain", gain);
 
       // Tell the sensor our desired gain value (normally you would do this during initialization,
       // not during the loop)
       colorSensor.setGain(gain);
-      // Explain information via telemetry
-      telemetry.addLine("Press the X button on gamepad 1 to detect color again.\n");
 
       // Check the status of the X button on the gamepad
       xButtonCurrentlyPressed = gamepad1.x;
@@ -169,7 +171,11 @@ public class ColorSensorTest extends LinearOpMode {
         if (xButtonCurrentlyPressed) {
           if (colorSensor instanceof SwitchableLight) {
             SwitchableLight light = (SwitchableLight)colorSensor;
-            light.enableLight(!light.isLightOn());
+            if (light.isLightOn()) {
+              light.enableLight(false);
+            } else if (!light.isLightOn()) {
+              light.enableLight(true);
+            }
           }
         }
       }
@@ -216,27 +222,20 @@ public class ColorSensorTest extends LinearOpMode {
             telemetry.addLine()
                     .addData("Blue Abs Sample", ((colors.blue > colors.red) && (colors.blue > colors.green)));
             telemetry.addLine()
-                    .addData("Yellow Abs Sample", ((colors.green > colors.blue) && (colors.red > colors.blue)));
+                    .addData("Yellow Abs Sample", ((colors.green > colors.blue) && (colors.green > colors.red)));
 
             telemetry.addLine()
-                    .addData("Red HSV Sample", (hsvValues[0] > 40) && (hsvValues[0] < 70));
+                    .addData("Red HSV Sample", (hsvValues[0] < 35));
             telemetry.addLine()
-                    .addData("Blue HSV Sample", (hsvValues[0] > 40) && (hsvValues[0] < 70));
+                    .addData("Blue HSV Sample", (hsvValues[0] > 205));
             telemetry.addLine()
-                    .addData("Yellow HSV Sample", (hsvValues[0] > 40) && (hsvValues[0] < 70));
+                    .addData("Yellow HSV Sample", (hsvValues[0] > 70) && (hsvValues[0] < 91));
           }
 
           telemetry.update();
         }
       }
       yButtonPreviouslyPressed = yButtonCurrentlyPressed;
-
-      // Change the Robot Controller's background color to match the color detected by the color sensor.
-      relativeLayout.post(new Runnable() {
-        public void run() {
-          relativeLayout.setBackgroundColor(Color.HSVToColor(hsvValues));
-        }
-      });
     }
   }
 }

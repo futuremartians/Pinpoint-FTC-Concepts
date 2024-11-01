@@ -33,6 +33,7 @@ public class FieldCentricTeleop extends LinearOpMode {
 
         DcMotor testMotor = hardwareMap.dcMotor.get("testMotor");
         Servo testServo = hardwareMap.servo.get("testServo");
+        testServo.setPosition(1);
 
         NormalizedColorSensor colorSensor
                 = hardwareMap.get(NormalizedColorSensor.class, "color_sensor");
@@ -106,17 +107,13 @@ public class FieldCentricTeleop extends LinearOpMode {
 
             /******************  TOUCH SENSOR BASED TEST SERVO OPERATION CODE STARTS *******************/
 
-            if (touchSensor.isPressed()) {
-                testServo.setPosition(1);
-            } else {
-                testServo.setPosition(0);
-            }
+            telemetry.addData("Touch Sensor: ", touchSensor.getState());
 
             // button is PRESSED if value returned is LOW or false.
             if (touchSensor.getState()) {
-                touchSensorCurrentlyPressed = true;
-            } else {
                 touchSensorCurrentlyPressed = false;
+            } else {
+                touchSensorCurrentlyPressed = true;
             }
 
             // If the button state is different than what it was, then act
@@ -125,7 +122,7 @@ public class FieldCentricTeleop extends LinearOpMode {
                 if (touchSensorCurrentlyPressed) {
                     if (testServo.getPosition() > 0.9) {
                         testServo.setPosition(0);
-                    } else {
+                    } else if (testServo.getPosition() < 0.1) {
                         testServo.setPosition(1);
                     }
                 }
@@ -137,28 +134,37 @@ public class FieldCentricTeleop extends LinearOpMode {
 
             /******************  GAMEPAD BASED TEST MOTOR OPERATION CODE STARTS *******************/
 
-            if (gamepad1.right_trigger > 0) {
+/* Enable this OR tbe next block only */
+            if (gamepad1.right_trigger > 0.05) {
                 testMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 testMotor.setPower(gamepad1.right_trigger);
-            } else if (gamepad1.left_trigger > 0) {
+            } else if (gamepad1.left_trigger > 0.05) {
                 testMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 testMotor.setPower(-gamepad1.left_trigger);
+            } else {
+                testMotor.setPower(0);
             }
+/**/
 
+/* Enable this OR tbe previous block only
             if (gamepad1.right_bumper) {
                 testMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 testMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 testMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                while (opModeIsActive() && (testMotor.getCurrentPosition() >= 1000)) {
-                    testMotor.setPower(0.5);
+                while (opModeIsActive() && (testMotor.getCurrentPosition() <= 2000)) {
+                    testMotor.setPower(1);
                 }
             } else if (gamepad1.left_bumper) {
                 testMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 testMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 testMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                testMotor.setPower(0.5);
-                testMotor.setTargetPosition(-1000);
+                testMotor.setPower(1);
+                testMotor.setTargetPosition(-2000);
             }
+ */
+
+            telemetry.addData("Test Motor Pos: ", testMotor.getCurrentPosition());
+            telemetry.addData("Test Servo Pos: ", testServo.getPosition());
 
             /******************  GAMEPAD BASED TEST MOTOR OPERATION CODE ENDS *******************/
 
